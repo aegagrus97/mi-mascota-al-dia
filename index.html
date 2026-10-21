@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi Mascota al Día</title>
+<meta name="description" content="Control sencillo de vacunas, desparasitaciones y consultas para pet parents.">
+<meta name="theme-color" content="#2f7d6d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f4ee;
+    --card: #ffffff;
+    --ink: #1f2a2e;
+    --muted: #66737a;
+    --line: #e4ded3;
+    --brand: #2f7d6d;
+    --brand-ink: #ffffff;
+    --brand-soft: #e3f1ed;
+    --warn: #946219;
+    --warn-soft: #fbf0dc;
+    --danger: #b4423a;
+    --danger-soft: #f9e3e1;
+    --ok: #2c7667;
+    --shadow: 0 1px 2px rgba(31,42,46,.06), 0 6px 18px rgba(31,42,46,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141a1c; --card: #1d2528; --ink: #eef2f1; --muted: #9aa8ad; --line: #2c373b;
+      --brand: #5cb8a4; --brand-ink: #0f1f1b; --brand-soft: #1f3631;
+      --warn: #e2b04f; --warn-soft: #3a3020; --danger: #ec7d73; --danger-soft: #3d2423; --ok: #5cb8a4;
+      --shadow: none; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141a1c; --card: #1d2528; --ink: #eef2f1; --muted: #9aa8ad; --line: #2c373b;
+    --brand: #5cb8a4; --brand-ink: #0f1f1b; --brand-soft: #1f3631;
+    --warn: #e2b04f; --warn-soft: #3a3020; --danger: #ec7d73; --danger-soft: #3d2423; --ok: #5cb8a4;
+    --shadow: none; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Nunito", system-ui, sans-serif; font-size: 16px; line-height: 1.45; }
+  .wrap { max-width: 880px; margin: 0 auto; padding-block: 20px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  h1 { font-family: "Fraunces", Georgia, serif; font-size: 1.7rem; margin: 0; letter-spacing: -.01em; }
+  h1 span { color: var(--brand); }
+  h2 { font-family: "Fraunces", Georgia, serif; font-size: 1.2rem; margin: 0 0 12px; }
+  .sub { color: var(--muted); margin: 2px 0 0; font-size: .95rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  button, .btn { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 10px 14px; cursor: pointer; background: var(--brand); color: var(--brand-ink); }
+  a.btn { display: inline-block; text-decoration: none; }
+  .ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .small { padding: 6px 10px; font-size: .85rem; }
+  button.link { background: none; color: var(--muted); padding: 4px 6px; font-weight: 600; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+  .pets { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+  .pet-chip { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-weight: 700; }
+  .pet-chip[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+  .pet-chip.add { border-style: dashed; color: var(--muted); }
+  .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .grid { grid-template-columns: 1.1fr .9fr; } }
+  .pet-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .pet-name { font-family: "Fraunces", Georgia, serif; font-size: 1.5rem; margin: 0; }
+  .meta { color: var(--muted); font-size: .95rem; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+  .stat { background: var(--bg); border-radius: 12px; padding: 10px; text-align: center; }
+  .stat b { display: block; font-size: 1.4rem; font-family: "Fraunces", Georgia, serif; }
+  .stat small { color: var(--muted); font-size: .8rem; }
+  .list { list-style: none; margin: 0; padding: 0; }
+  .item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--line); }
+  .item:first-child { border-top: 0; }
+  .dot { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-size: 1.15rem; background: var(--brand-soft); }
+  .item-body { flex: 1; min-width: 0; }
+  .item-title { font-weight: 700; }
+  .item-sub { color: var(--muted); font-size: .9rem; }
+  .badge { display: inline-block; font-size: .78rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-left: 6px; white-space: nowrap; }
+  .b-over { background: var(--danger-soft); color: var(--danger); }
+  .b-soon { background: var(--warn-soft); color: var(--warn); }
+  .b-ok { background: var(--brand-soft); color: var(--ok); }
+  .empty { color: var(--muted); text-align: center; padding: 18px 8px; }
+  form { display: grid; gap: 12px; }
+  label { display: grid; gap: 4px; font-weight: 700; font-size: .92rem; }
+  input, select, textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; }
+  textarea { min-height: 70px; resize: vertical; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .hint { color: var(--muted); font-weight: 400; font-size: .82rem; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  dialog { border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--ink); padding: 18px; width: min(460px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(0,0,0,.45); }
+  .welcome { text-align: center; padding: 32px 16px; }
+  .welcome .big { font-size: 3rem; }
+  .welcome p { color: var(--muted); max-width: 420px; margin: 8px auto 18px; }
+  footer { margin-top: 24px; color: var(--muted); font-size: .85rem; text-align: center; }
+  footer .tools { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .note { background: var(--warn-soft); color: var(--ink); border-radius: 12px; padding: 10px 12px; font-size: .88rem; }
+  .hidden { display: none !important; }
+  #backupText { min-height: 160px; font-family: ui-monospace, Menlo, monospace; font-size: .8rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Mi Mascota <span>al Día</span> 🐾</h1>
+      <p class="sub">Vacunas, desparasitaciones y consultas en un solo lugar.</p>
+    </div>
+  </header>
+
+  <nav class="pets" id="pets" aria-label="Tus mascotas"></nav>
+
+  <section id="welcome" class="card welcome hidden">
+    <div class="big">🐶🐱</div>
+    <h2>Agrega a tu primera mascota</h2>
+    <p>Registra sus vacunas, desparasitaciones y consultas. La app te dice qué toca y cuándo, para que nada se te pase.</p>
+    <button id="welcomeAdd">+ Agregar mascota</button>
+  </section>
+
+  <div id="main" class="grid hidden">
+    <div>
+      <section class="card">
+        <div class="pet-head">
+          <div>
+            <h2 class="pet-name" id="petName"></h2>
+            <div class="meta" id="petMeta"></div>
+          </div>
+          <div class="actions">
+            <button class="ghost small" id="editPet">Editar</button>
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat"><b id="sOver">0</b><small>Vencidos</small></div>
+          <div class="stat"><b id="sSoon">0</b><small>Próx. 30 días</small></div>
+          <div class="stat"><b id="sTotal">0</b><small>Registros</small></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>📌 Próximos pendientes</h2>
+        <ul class="list" id="upcoming"></ul>
+      </section>
+
+      <section class="card">
+        <h2>📖 Historial</h2>
+        <ul class="list" id="history"></ul>
+      </section>
+    </div>
+
+    <aside>
+      <section class="card">
+        <h2>➕ Nuevo registro</h2>
+        <form id="recForm">
+          <label>Tipo
+            <select id="recType" required></select>
+          </label>
+          <div class="row">
+            <label>Fecha
+              <input type="date" id="recDate" required>
+            </label>
+            <label>Próxima
+              <input type="date" id="recNext">
+            </label>
+          </div>
+          <span class="hint" id="nextHint"></span>
+          <label>Detalle <span class="hint">(producto, vacuna, motivo…)</span>
+            <input type="text" id="recTitle" maxlength="80" placeholder="Ej. Óctuple, Bravecto, revisión general">
+          </label>
+          <label>Notas
+            <textarea id="recNotes" maxlength="400" placeholder="Peso, indicaciones del vet, reacciones…"></textarea>
+          </label>
+          <div class="actions"><button type="button" id="saveRec">Guardar registro</button></div>
+        </form>
+      </section>
+      <p class="note">⚠️ Las fechas sugeridas son orientativas. El esquema correcto depende de la edad, el estilo de vida y la salud de tu mascota: confírmalo siempre con tu médico veterinario.</p>
+    </aside>
+  </div>
+
+  <footer>
+    <div class="tools">
+      <button class="link" id="exportBtn">⬇️ Respaldar datos</button>
+      <button class="link" id="importBtn">⬆️ Restaurar respaldo</button>
+      <input type="file" id="importFile" accept="application/json" class="hidden">
+    </div>
+    Tus datos se guardan solo en este dispositivo.<br>
+    Hecho por <a href="https://github.com/aegagrus97" style="color:inherit">Kat Moctezuma</a> · Médica veterinaria
+  </footer>
+</div>
+
+<dialog id="petDialog">
+  <form id="petForm">
+    <h2 id="petDialogTitle">Nueva mascota</h2>
+    <label>Nombre
+      <input type="text" id="pName" required maxlength="30" placeholder="Ej. Luna">
+    </label>
+    <div class="row">
+      <label>Especie
+        <select id="pSpecies">
+          <option value="perro">Perro</option>
+          <option value="gato">Gato</option>
+        </select>
+      </label>
+      <label>Sexo
+        <select id="pSex">
+          <option value="">—</option>
+          <option value="hembra">Hembra</option>
+          <option value="macho">Macho</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <label>Nacimiento <span class="hint">(aprox.)</span>
+        <input type="date" id="pBirth">
+      </label>
+      <label>Peso (kg)
+        <input type="number" id="pWeight" min="0" step="0.1" inputmode="decimal">
+      </label>
+    </div>
+    <div class="actions">
+      <button type="button" class="ghost hidden" id="deletePet" style="margin-right:auto;color:var(--danger)">Eliminar</button>
+      <button type="button" class="ghost" id="cancelPet">Cancelar</button>
+      <button type="button" id="savePet">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="confirmDialog">
+  <p id="confirmText" style="margin:0 0 16px;font-weight:600"></p>
+  <div class="actions">
+    <button type="button" class="ghost" id="confirmNo">Cancelar</button>
+    <button type="button" id="confirmYes" style="background:var(--danger)">Sí, eliminar</button>
+  </div>
+</dialog>
+<dialog id="backupDialog">
+  <h2>Respaldo de tus datos</h2>
+  <p class="hint" style="margin:0 0 10px">Copia este texto y guárdalo en una nota o mándatelo por correo. Para restaurar, pega un respaldo aquí y toca «Restaurar».</p>
+  <textarea id="backupText" spellcheck="false" aria-label="Texto del respaldo"></textarea>
+  <div class="actions" style="margin-top:12px">
+    <button type="button" class="ghost" id="backupClose" style="margin-right:auto">Cerrar</button>
+    <button type="button" class="ghost" id="backupRestore">Restaurar</button>
+    <button type="button" id="backupCopy">Copiar</button>
+  </div>
+</dialog>
+<div id="toast" role="status" style="position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none"></div>
+
+<script>
+(function () {
+  const TYPES = {
+    vacuna:   { label: "Vacuna",                    icon: "💉", days: 365, byTitle: true, hint: "Refuerzo anual sugerido. Escribe el nombre de la vacuna en Detalle para llevar cada una por separado. Cachorros y gatitos llevan un esquema distinto." },
+    rabia:    { label: "Vacuna antirrábica",        icon: "🛡️", days: 365, hint: "Refuerzo anual sugerido." },
+    despInt:  { label: "Desparasitación interna",   icon: "🪱", days: 90,  hint: "Cada 3 meses en adultos, como referencia general." },
+    despExt:  { label: "Desparasitación externa",   icon: "🐜", days: 30,  hint: "Depende del producto: revisa la duración en la etiqueta." },
+    consulta: { label: "Consulta / chequeo",        icon: "🩺", days: 365, hint: "Chequeo preventivo al menos una vez al año." },
+    dental:   { label: "Limpieza dental",           icon: "🦷", days: 365, hint: "Según lo indique tu vet." },
+    estetica: { label: "Baño / estética",           icon: "🛁", days: 30,  hint: "Ajusta según el pelaje y estilo de vida." },
+    otro:     { label: "Otro",                      icon: "📝", days: 0,   byTitle: true, hint: "Cada detalle distinto lleva su propio recordatorio." }
+  };
+  const KEY = "miMascotaAlDia.v1";
+  const $ = (id) => document.getElementById(id);
+
+  let state = load();
+  let editingPetId = null;
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) {
+        const data = sanitize(JSON.parse(raw));
+        if (data) return data;
+      }
+    } catch (e) {}
+    return { pets: [], selected: null };
+  }
+  // Keeps only well-formed pets and records, so a damaged or hand-edited backup can't break the app.
+  function sanitize(data) {
+    if (!data || !Array.isArray(data.pets)) return null;
+    const isDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+    const str = (s) => typeof s === "string" ? s : (typeof s === "number" ? String(s) : "");
+    const pets = data.pets.filter(p => p && typeof p === "object" && str(p.name).trim()).map(p => ({
+      id: str(p.id) || uid(),
+      name: str(p.name).trim().slice(0, 30),
+      species: p.species === "gato" ? "gato" : "perro",
+      sex: p.sex === "hembra" || p.sex === "macho" ? p.sex : "",
+      birth: isDate(p.birth) ? p.birth : "",
+      weight: str(p.weight),
+      records: (Array.isArray(p.records) ? p.records : []).filter(r => r && isDate(r.date)).map(r => ({
+        id: str(r.id) || uid(),
+        type: TYPES[r.type] ? r.type : "otro",
+        date: r.date,
+        next: isDate(r.next) ? r.next : "",
+        title: str(r.title).slice(0, 80),
+        notes: str(r.notes).slice(0, 400)
+      }))
+    }));
+    return { pets, selected: typeof data.selected === "string" ? data.selected : null };
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+
+  function today() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+  function parseDate(s) { if (!s) return null; const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); }
+  function toISO(d) { const p = (n) => String(n).padStart(2, "0"); return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate()); }
+  function addDays(s, n) { const d = parseDate(s); d.setDate(d.getDate()+n); return toISO(d); }
+  function fmt(s) { return parseDate(s).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }); }
+  function daysUntil(s) { return Math.round((parseDate(s) - today()) / 86400000); }
+
+  function ageText(birth) {
+    if (!birth) return "";
+    const b = parseDate(birth), t = today();
+    let months = (t.getFullYear()-b.getFullYear())*12 + (t.getMonth()-b.getMonth());
+    if (t.getDate() < b.getDate()) months--;
+    if (months < 0) return "";
+    if (months < 12) return months + (months === 1 ? " mes" : " meses");
+    const y = Math.floor(months/12);
+    return y + (y === 1 ? " año" : " años");
+  }
+
+  function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c])); }
+
+  function currentPet() { return state.pets.find(p => p.id === state.selected) || state.pets[0] || null; }
+
+  // Pending = for each type (and detail, for vaccines and "otro"), the latest record with a "next" date,
+  // unless a newer record of that group exists. On equal dates the one saved last wins.
+  function norm(s) { return String(s || "").trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " "); }
+  function groupKey(r) { const t = TYPES[r.type] || TYPES.otro; return r.type + "|" + (t.byTitle ? norm(r.title) : ""); }
+  function pendings(pet) {
+    const groups = {};
+    pet.records.forEach(r => {
+      const k = groupKey(r);
+      if (!groups[k] || r.date >= groups[k].date) groups[k] = r;
+    });
+    return Object.values(groups).filter(r => r.next).sort((a,b) => a.next.localeCompare(b.next));
+  }
+
+  function badgeFor(next) {
+    const d = daysUntil(next);
+    if (d < 0) return '<span class="badge b-over">Vencido hace ' + (-d) + (d === -1 ? " día" : " días") + '</span>';
+    if (d === 0) return '<span class="badge b-soon">Hoy</span>';
+    if (d <= 30) return '<span class="badge b-soon">En ' + d + (d === 1 ? " día" : " días") + '</span>';
+    return '<span class="badge b-ok">Al día</span>';
+  }
+
+  function render() {
+    const pet = currentPet();
+    if (pet) state.selected = pet.id;
+
+    $("pets").innerHTML = state.pets.map(p =>
+      '<button class="pet-chip" aria-pressed="' + (pet && p.id === pet.id) + '" data-pet="' + p.id + '">' +
+      (p.species === "gato" ? "🐱" : "🐶") + " " + esc(p.name) + "</button>"
+    ).join("") + (state.pets.length ? '<button class="pet-chip add" id="addPetChip">+ Mascota</button>' : "");
+
+    $("welcome").classList.toggle("hidden", !!pet);
+    $("main").classList.toggle("hidden", !pet);
+    if (!pet) return;
+
+    $("petName").textContent = pet.name;
+    const bits = [pet.species === "gato" ? "Gato" : "Perro"];
+    if (pet.sex) bits.push(pet.sex.charAt(0).toUpperCase() + pet.sex.slice(1));
+    const age = ageText(pet.birth); if (age) bits.push(age);
+    if (pet.weight) bits.push(pet.weight + " kg");
+    $("petMeta").textContent = bits.join(" · ");
+
+    const pend = pendings(pet);
+    $("sOver").textContent = pend.filter(r => daysUntil(r.next) < 0).length;
+    $("sSoon").textContent = pend.filter(r => { const d = daysUntil(r.next); return d >= 0 && d <= 30; }).length;
+    $("sTotal").textContent = pet.records.length;
+
+    $("upcoming").innerHTML = pend.length ? pend.map(r => {
+      const t = TYPES[r.type] || TYPES.otro;
+      const head = t.byTitle && r.title ? r.title : t.label;
+      const sub = t.byTitle && r.title ? t.label : r.title;
+      return '<li class="item"><div class="dot">' + t.icon + '</div><div class="item-body">' +
+        '<div class="item-title">' + esc(head) + badgeFor(r.next) + '</div>' +
+        '<div class="item-sub">' + fmt(r.next) + (sub ? " · " + esc(sub) : "") + '</div></div>' +
+        '<a class="btn ghost small" href="' + esc(calendarURL(pet, r)) + '" target="_blank" rel="noopener" title="Agregar a Google Calendar" aria-label="Agregar a Google Calendar">📅</a></li>';
+    }).join("") : '<li class="empty">Sin pendientes. Agrega un registro con fecha próxima para ver recordatorios aquí.</li>';
+
+    const hist = [...pet.records].sort((a,b) => b.date.localeCompare(a.date));
+    $("history").innerHTML = hist.length ? hist.map(r => {
+      const t = TYPES[r.type] || TYPES.otro;
+      return '<li class="item"><div class="dot">' + t.icon + '</div><div class="item-body">' +
+        '<div class="item-title">' + esc(r.title || t.label) + '</div>' +
+        '<div class="item-sub">' + esc(t.label) + " · " + fmt(r.date) + (r.next ? " · próxima " + fmt(r.next) : "") + '</div>' +
+        (r.notes ? '<div class="item-sub">' + esc(r.notes) + '</div>' : "") +
+        '</div><button class="link small" data-del="' + r.id + '" aria-label="Borrar registro">✕</button></li>';
+    }).join("") : '<li class="empty">Aún no hay registros.</li>';
+  }
+
+  // Record form
+  $("recType").innerHTML = Object.entries(TYPES).map(([k,t]) => '<option value="' + k + '">' + t.icon + " " + t.label + "</option>").join("");
+  // A "next" date typed by hand (e.g. the one the vet gave) is never overwritten by the suggestion.
+  let nextTouched = false;
+  function suggestNext() {
+    const t = TYPES[$("recType").value];
+    const date = $("recDate").value;
+    $("nextHint").textContent = t.hint;
+    if (nextTouched) return;
+    if (t.days && date) $("recNext").value = addDays(date, t.days);
+    else if (!t.days) $("recNext").value = "";
+  }
+  $("recType").addEventListener("change", suggestNext);
+  $("recDate").addEventListener("change", suggestNext);
+  $("recNext").addEventListener("input", () => { nextTouched = $("recNext").value !== ""; });
+  $("recDate").value = toISO(today());
+  suggestNext();
+
+  function askConfirm(text, onYes) {
+    const d = $("confirmDialog");
+    $("confirmText").textContent = text;
+    $("confirmYes").onclick = () => { d.close(); onYes(); };
+    $("confirmNo").onclick = () => d.close();
+    d.showModal();
+  }
+  let toastTimer;
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.style.opacity = "1";
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.style.opacity = "0"; }, 1800);
+  }
+  // Forms never submit (works inside sandboxed previews too); Enter triggers the save button.
+  ["recForm", "petForm"].forEach(id => {
+    $(id).addEventListener("submit", (e) => e.preventDefault());
+    $(id).addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && e.target.tagName !== "TEXTAREA" && e.target.tagName !== "BUTTON") {
+        e.preventDefault(); $(id === "recForm" ? "saveRec" : "savePet").click();
+      }
+    });
+  });
+
+  $("saveRec").addEventListener("click", () => {
+    if (!$("recForm").reportValidity()) return;
+    const pet = currentPet(); if (!pet) return;
+    pet.records.push({
+      id: uid(), type: $("recType").value, date: $("recDate").value,
+      next: $("recNext").value || "", title: $("recTitle").value.trim(), notes: $("recNotes").value.trim()
+    });
+    save();
+    $("recTitle").value = ""; $("recNotes").value = "";
+    nextTouched = false; suggestNext();
+    render(); toast("Registro guardado ✓");
+  });
+
+  // Pet dialog
+  function openPet(pet) {
+    editingPetId = pet ? pet.id : null;
+    $("petDialogTitle").textContent = pet ? "Editar mascota" : "Nueva mascota";
+    $("pName").value = pet ? pet.name : "";
+    $("pSpecies").value = pet ? pet.species : "perro";
+    $("pSex").value = pet ? (pet.sex || "") : "";
+    $("pBirth").value = pet ? (pet.birth || "") : "";
+    $("pWeight").value = pet ? (pet.weight || "") : "";
+    $("deletePet").classList.toggle("hidden", !pet);
+    $("petDialog").showModal();
+    $("pName").focus();
+  }
+  $("savePet").addEventListener("click", () => {
+    if (!$("petForm").reportValidity()) return;
+    const data = {
+      name: $("pName").value.trim(), species: $("pSpecies").value, sex: $("pSex").value,
+      birth: $("pBirth").value, weight: $("pWeight").value
+    };
+    if (!data.name) return;
+    if (editingPetId) Object.assign(state.pets.find(p => p.id === editingPetId), data);
+    else { const p = { id: uid(), records: [], ...data }; state.pets.push(p); state.selected = p.id; }
+    save(); $("petDialog").close(); render(); toast("Mascota guardada ✓");
+  });
+  $("cancelPet").addEventListener("click", () => $("petDialog").close());
+  $("deletePet").addEventListener("click", () => {
+    const pet = state.pets.find(p => p.id === editingPetId);
+    if (!pet) return;
+    $("petDialog").close();
+    askConfirm("¿Eliminar a " + pet.name + " y todo su historial?", () => {
+      state.pets = state.pets.filter(p => p.id !== pet.id);
+      state.selected = state.pets[0] ? state.pets[0].id : null;
+      save(); render();
+    });
+  });
+  $("welcomeAdd").addEventListener("click", () => openPet(null));
+  $("editPet").addEventListener("click", () => openPet(currentPet()));
+
+  // Delegated clicks
+  document.addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-pet]");
+    if (chip) { state.selected = chip.dataset.pet; save(); render(); return; }
+    if (e.target.closest("#addPetChip")) { openPet(null); return; }
+    const del = e.target.closest("[data-del]");
+    if (del) {
+      const pet = currentPet();
+      const id = del.dataset.del;
+      askConfirm("¿Borrar este registro?", () => {
+        pet.records = pet.records.filter(r => r.id !== id);
+        save(); render();
+      });
+      return;
+    }
+  });
+
+  // Calendar reminder: an all-day Google Calendar event on the due date (opens in a new tab).
+  function calendarURL(pet, r) {
+    const t = TYPES[r.type] || TYPES.otro;
+    const what = t.byTitle && r.title ? r.title : t.label;
+    const params = new URLSearchParams({
+      action: "TEMPLATE",
+      text: what + " de " + pet.name,
+      dates: r.next.replace(/-/g, "") + "/" + addDays(r.next, 1).replace(/-/g, ""),
+      details: (r.title && !t.byTitle ? r.title + " · " : "") + "Recordatorio de Mi Mascota al Día"
+    });
+    return "https://calendar.google.com/calendar/render?" + params.toString();
+  }
+
+  // Backup: shown as text to copy, since this page can't save files.
+  function restoreFrom(text, after) {
+    let data = null;
+    try { data = sanitize(JSON.parse(text)); } catch (err) {}
+    if (!data) { toast("Ese texto no es un respaldo válido"); return; }
+    const apply = () => { state = data; save(); render(); after && after(); toast("Respaldo restaurado ✓"); };
+    if (state.pets.length) askConfirm("Esto reemplaza los datos actuales. ¿Continuar?", apply); else apply();
+  }
+  $("exportBtn").addEventListener("click", () => {
+    $("backupText").value = JSON.stringify(state);
+    $("backupDialog").showModal();
+  });
+  $("backupClose").addEventListener("click", () => $("backupDialog").close());
+  $("backupCopy").addEventListener("click", () => {
+    const ta = $("backupText");
+    const fallback = () => { ta.focus(); ta.select(); toast("Selecciona y copia el texto"); };
+    try {
+      navigator.clipboard.writeText(ta.value).then(() => toast("Respaldo copiado ✓"), fallback);
+    } catch (err) { fallback(); }
+  });
+  $("backupRestore").addEventListener("click", () => {
+    $("backupDialog").close();
+    restoreFrom($("backupText").value);
+  });
+  $("importBtn").addEventListener("click", () => $("importFile").click());
+  $("importFile").addEventListener("change", async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    restoreFrom(await f.text());
+    e.target.value = "";
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
